@@ -1,0 +1,62 @@
+version: '2'
+networks: 
+  prodnetwork: 
+    driver: bridge
+services: 
+  jenkins: 
+    build: ./jenkins
+    depends_on: 
+      - sonar
+      - seleniumhub
+    environment: 
+      - NEXUS_PORT=8081
+      - SONAR_PORT=9000
+      - SONAR_DB_PORT=5432
+    networks: 
+      - prodnetwork
+    ports: 
+      - "18080:8080"
+  nodechrome: 
+    depends_on: 
+      - seleniumhub
+    environment: 
+      - HUB_PORT_4444_TCP_ADDR=seleniumhub
+    image: selenium/node-chrome
+    networks: 
+      - prodnetwork
+    ports: 
+      - 5900
+  nodeff: 
+    depends_on: 
+      - seleniumhub
+    environment: 
+      - HUB_PORT_4444_TCP_ADDR=seleniumhub
+    image: selenium/node-firefox
+    networks: 
+      - prodnetwork
+    ports: 
+      - 5900
+  seleniumhub: 
+    image: selenium/hub
+    networks: 
+      - prodnetwork
+    ports: 
+      - "4444:4444"
+  sonar: 
+    build: ./sonar
+    depends_on: 
+      - sonardb
+    environment: 
+      - "SONARQUBE_JDBC_URL=jdbc:postgresql://sonardb:5432/sonar"
+    networks: 
+      - prodnetwork
+    ports: 
+      - "9000:9000"
+      - "5432:5432"
+  sonardb: 
+    environment: 
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+    image: postgres
+    networks: 
+      - prodnetwork
